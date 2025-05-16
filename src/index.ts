@@ -203,3 +203,4 @@ export default {
   },
 };
 export * from "./workflows/email-pipe";
+export * from "./durable-objects/screenshot-browser";

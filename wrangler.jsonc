@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "early-studies-cold-pipe",
   "main": "src/index.ts",
-  "compatibility_date": "2025-04-17",
+  "compatibility_date": "2025-05-16",
   "compatibility_flags": [
     "nodejs_compat"
   ],
@@ -64,6 +64,23 @@
   ],
   "browser": {
     "binding": "BROWSER"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SCREENSHOT_BROWSER_DO",
+        "class_name": "ScreenshotBrowserDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": ["ScreenshotBrowserDO"]
+    }
+  ],
+  "images": {
+    "binding": "IMAGES",
   }
   // "observability": {
   //   "enabled": true,
