@@ -2,9 +2,7 @@
   "name": "interval-typescript-starter",
   "version": "0.1.0",
   "license": "MIT",
-  "engines": {
-    "node": ">=22.0.0"
-  },
+  "packageManager": "bun@1.2.19",
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "tsc",
