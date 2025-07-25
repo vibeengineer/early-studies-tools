@@ -91,7 +91,7 @@ export default new Action({
         searchPosts: io.input.boolean("Get Posts", {
           helpText:
             "Search for and extract Reddit posts based on your search terms. Returns post titles, content, metadata, upvotes, and author information. Required when using search terms.",
-          defaultValue: true,
+          defaultValue: false,
         }),
         searchComments: io.input.boolean("Get Comments", {
           helpText:
