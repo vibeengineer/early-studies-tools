@@ -7,6 +7,12 @@ import {
   type SearchSort,
   type TimeRange 
 } from "../../services/apify/scrape-reddit";
+import { 
+  type RedditOutputItem,
+  isRedditComment,
+  isRedditPost,
+  isRedditCommunity
+} from "../../services/apify/reddit-schemas";
 
 // Type definitions for form inputs (using any for form values since they come from io.group)
 interface RedditScraperFormInputs {
@@ -245,10 +251,24 @@ export default new Action({
       const scraperOptions: RedditScraperOptions = { 
         timeout, 
         memory,
-        onItem: async (item, _itemIndex) => {
+        onItem: async (item: RedditOutputItem, _itemIndex) => {
           itemCount++;
           await ctx.log(`\n--- Item ${itemCount} scraped ---`);
-          console.log(`Reddit Item ${itemCount}:`, JSON.stringify(item, null, 2));
+          
+          // Log item with type information
+          let itemType = 'unknown';
+          if (isRedditPost(item)) {
+            itemType = 'post';
+            await ctx.log(`Post: ${item.title}`);
+          } else if (isRedditComment(item)) {
+            itemType = 'comment';
+            await ctx.log(`Comment on: ${item.postTitle}`);
+          } else if (isRedditCommunity(item)) {
+            itemType = 'community';
+            await ctx.log(`Community: ${item.displayName}`);
+          }
+          
+          console.log(`Reddit ${itemType} ${itemCount}:`, JSON.stringify(item, null, 2));
           await ctx.log(`--- End Item ${itemCount} ---\n`);
         }
       };

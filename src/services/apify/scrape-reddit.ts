@@ -1,5 +1,10 @@
 import { z } from 'zod';
 import { ApifyClient } from 'apify-client';
+import { 
+  RedditOutputItem, 
+  validateRedditOutput,
+  validateRedditItem
+} from './reddit-schemas';
 
 const ACTOR_ID = "harshmaur/reddit-scraper-pro";
 const API_TOKEN = process.env.APIFY_API_KEY;
@@ -8,21 +13,20 @@ const API_TOKEN = process.env.APIFY_API_KEY;
 export type SearchSort = 'relevance' | 'hot' | 'top' | 'new' | 'comments';
 export type TimeRange = 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
 
-export interface RedditItem {
-  [key: string]: unknown;
-}
+// Use typed Reddit output items instead of generic interface
+export type RedditItem = RedditOutputItem;
 
 export interface RedditScraperResult {
   runId: string;
   status: string;
-  items: RedditItem[];
+  items: RedditOutputItem[];
   totalItems: number;
 }
 
 export interface RedditScraperOptions {
   timeout?: number;
   memory?: number;
-  onItem?: (item: RedditItem, itemIndex: number) => void | Promise<void>;
+  onItem?: (item: RedditOutputItem, itemIndex: number) => void | Promise<void>;
 }
 
 const inputSchema = z.object({
@@ -191,11 +195,14 @@ export async function scrapeReddit(
 
     const { items } = await client.dataset(run.defaultDatasetId).listItems();
     
+    // Validate the output using our Reddit schemas
+    const validatedItems = validateRedditOutput(items);
+    
     return {
       runId: run.id,
       status: run.status,
-      items: items as RedditItem[],
-      totalItems: items.length,
+      items: validatedItems,
+      totalItems: validatedItems.length,
     };
   } catch (error) {
     throw new Error(`Reddit scraping failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -214,7 +221,7 @@ async function scrapeWithStreaming(
     memory: options.memory || 8192,
   });
 
-  let allItems: RedditItem[] = [];
+  let allItems: RedditOutputItem[] = [];
   let itemIndex = 0;
   let offset = 0;
   const limit = 100;
@@ -231,14 +238,19 @@ async function scrapeWithStreaming(
         limit,
       });
 
-      // Process any new items
+      // Process any new items with validation
       for (const item of newItems) {
-        const typedItem = item as RedditItem;
-        allItems.push(typedItem);
-        if (options.onItem) {
-          await options.onItem(typedItem, itemIndex);
+        try {
+          const validatedItem = validateRedditItem(item);
+          allItems.push(validatedItem);
+          if (options.onItem) {
+            await options.onItem(validatedItem, itemIndex);
+          }
+          itemIndex++;
+        } catch (validationError) {
+          console.warn('Failed to validate Reddit item:', validationError);
+          // Skip invalid items
         }
-        itemIndex++;
       }
 
       // Update offset for next batch
@@ -258,12 +270,17 @@ async function scrapeWithStreaming(
         });
 
         for (const item of finalItems) {
-          const typedItem = item as RedditItem;
-          allItems.push(typedItem);
-          if (options.onItem) {
-            await options.onItem(typedItem, itemIndex);
+          try {
+            const validatedItem = validateRedditItem(item);
+            allItems.push(validatedItem);
+            if (options.onItem) {
+              await options.onItem(validatedItem, itemIndex);
+            }
+            itemIndex++;
+          } catch (validationError) {
+            console.warn('Failed to validate Reddit item:', validationError);
+            // Skip invalid items
           }
-          itemIndex++;
         }
       } catch (finalError) {
         // Ignore errors on final fetch
