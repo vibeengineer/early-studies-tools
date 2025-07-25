@@ -114,8 +114,9 @@ const inputSchema = z.object({
     .number()
     .int()
     .positive()
+    .max(900)
     .describe(
-      'Maximum number of posts to be saved: The maximum number of posts that will be scraped for Homepage Posts, Search Posts, Communities Posts or User Posts'
+      'Maximum number of posts to be saved: The maximum number of posts that will be scraped for Homepage Posts, Search Posts, Communities Posts or User Posts (max: 900)'
     )
     .optional(),
 
@@ -123,8 +124,9 @@ const inputSchema = z.object({
     .number()
     .int()
     .positive()
+    .max(900)
     .describe(
-      'Limit of comments to be saved: The maximum number of comments that will be scraped for Search Query Comments or User Comments'
+      'Limit of comments to be saved: The maximum number of comments that will be scraped for Search Query Comments or User Comments (max: 900)'
     )
     .optional(),
 
@@ -132,8 +134,9 @@ const inputSchema = z.object({
     .number()
     .int()
     .positive()
+    .max(500)
     .describe(
-      'Limit of comments per post: The maximum number of comments that will be scraped for each Post'
+      'Limit of comments per post: The maximum number of comments that will be scraped for each Post (max: 500)'
     )
     .optional(),
 
@@ -141,8 +144,9 @@ const inputSchema = z.object({
     .number()
     .int()
     .positive()
+    .max(100)
     .describe(
-      'Limit of Communities to be saved: The maximum number of Communities that will be scraped for Search Query Communities'
+      'Limit of Communities to be saved: The maximum number of Communities that will be scraped for Search Query Communities (max: 100)'
     )
     .optional(),
 
