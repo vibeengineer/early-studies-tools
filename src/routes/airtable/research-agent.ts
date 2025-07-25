@@ -34,11 +34,21 @@ export default new Action({
     // Get shared Airtable configuration
     const config = await selectAirtableBaseConfig();
 
-    const { sourceFields, targetField, researchQuestion, selectedModel, researchDepth, queueConcurrency, queueIntervalCap, queueInterval } = await io
+    const {
+      sourceFields,
+      targetField,
+      researchQuestion,
+      selectedModel,
+      researchDepth,
+      queueConcurrency,
+      queueIntervalCap,
+      queueInterval,
+    } = await io
       .group({
         sourceFields: io
           .search("Select Source Fields for Context", {
-            helpText: "Search and select fields that will provide context to the AI for research (optional - if none selected, full record will be used)",
+            helpText:
+              "Search and select fields that will provide context to the AI for research (optional - if none selected, full record will be used)",
             onSearch: async (query) => {
               return config.selectedTable.fields.filter(
                 (field) =>
@@ -77,7 +87,8 @@ export default new Action({
             {
               label: "Perplexity Sonar Pro",
               value: "sonar-pro",
-              description: "Enhanced version of Sonar with better reasoning and search capabilities",
+              description:
+                "Enhanced version of Sonar with better reasoning and search capabilities",
             },
             {
               label: "Perplexity Sonar Deep Research",
@@ -92,7 +103,7 @@ export default new Action({
           },
         }),
         researchDepth: io.select.single("Research Depth", {
-          helpText: "How thorough should the research be? (Only applies to Sonar and Sonar Pro models)",
+          helpText: "How thorough should the research be?",
           options: [
             { label: "Low", value: "low" },
             { label: "Medium", value: "medium" },
@@ -100,24 +111,30 @@ export default new Action({
           ],
           defaultValue: { label: "Medium", value: "medium" },
         }),
-        queueConcurrency: io.input.number("Queue Concurrency", {
-          helpText: "Number of concurrent requests (optional, defaults to 20)",
-          min: 1,
-          max: 200,
-          placeholder: "20",
-        }).optional(),
-        queueIntervalCap: io.input.number("Queue Interval Cap", {
-          helpText: "Maximum requests per interval (optional, defaults to 10)",
-          min: 1,
-          max: 50,
-          placeholder: "10",
-        }).optional(),
-        queueInterval: io.input.number("Queue Interval (ms)", {
-          helpText: "Interval duration in milliseconds (optional, defaults to 2000)",
-          min: 100,
-          max: 10000,
-          placeholder: "2000",
-        }).optional(),
+        queueConcurrency: io.input
+          .number("Queue Concurrency", {
+            helpText: "Number of concurrent requests (optional, defaults to 20)",
+            min: 1,
+            max: 200,
+            placeholder: "20",
+          })
+          .optional(),
+        queueIntervalCap: io.input
+          .number("Queue Interval Cap", {
+            helpText: "Maximum requests per interval (optional, defaults to 10)",
+            min: 1,
+            max: 50,
+            placeholder: "10",
+          })
+          .optional(),
+        queueInterval: io.input
+          .number("Queue Interval (ms)", {
+            helpText: "Interval duration in milliseconds (optional, defaults to 2000)",
+            min: 100,
+            max: 10000,
+            placeholder: "2000",
+          })
+          .optional(),
       })
       .validate(({ targetField }) => {
         const targetFieldObj = config.selectedTable.fields.find((f) => f.id === targetField.value);
@@ -185,28 +202,23 @@ export default new Action({
           question: researchQuestion,
         });
 
-        const selectedModelKey = typeof selectedModel === "string" ? selectedModel : selectedModel.value;
+        const selectedModelKey =
+          typeof selectedModel === "string" ? selectedModel : selectedModel.value;
         const { model } = getModelByKey(selectedModelKey);
-        
+
         let result;
-        if (selectedModelKey === "sonar-deep-research") {
-          result = await generateText({
-            model,
-            prompt,
-          });
-        } else {
-          result = await generateText({
-            model,
-            prompt,
-            providerOptions: {
-              perplexity: {
-                web_search_options: {
-                  search_context_size: researchDepth.value as "low" | "medium" | "high",
-                },
+
+        result = await generateText({
+          model,
+          prompt,
+          providerOptions: {
+            perplexity: {
+              web_search_options: {
+                search_context_size: researchDepth.value as "low" | "medium" | "high",
               },
             },
-          });
-        }
+          },
+        });
 
         const researchContent = result.text.trim();
 
@@ -237,10 +249,10 @@ export default new Action({
       }
     });
 
-    const queue = new PQueue({ 
-      concurrency: queueConcurrency || 20, 
-      intervalCap: queueIntervalCap || 10, 
-      interval: queueInterval || 2000 
+    const queue = new PQueue({
+      concurrency: queueConcurrency || 20,
+      intervalCap: queueIntervalCap || 10,
+      interval: queueInterval || 2000,
     });
     await queue.addAll(tasks);
 
