@@ -66,31 +66,31 @@ export default new Action({
     const formInputs: RedditScraperFormInputs = await io
       .group({
         startUrls: io.input.text("Start URLs (optional)", {
-          helpText: "Enter Reddit URLs to scrape, separated by commas (community URLs, post URLs, user URLs, etc.)",
-          placeholder: "e.g., https://www.reddit.com/r/developers/, https://www.reddit.com/user/username",
+          helpText: "Enter specific Reddit URLs to scrape, separated by commas. Supports: subreddit URLs (r/technology), user profiles (user/username), specific posts, search result URLs, or popular feeds. Leave empty to use search terms instead.",
+          placeholder: "e.g., https://www.reddit.com/r/technology/, https://www.reddit.com/user/someusername",
         }).optional(),
         searchTerms: io.input.text("Search Terms (optional)", {
-          helpText: "Search queries to find Reddit topics, separated by commas",
-          placeholder: "e.g., web scraping, automation, programming",
+          helpText: "Enter keywords or phrases to search across Reddit, separated by commas. Use with 'Get Posts', 'Get Comments', or 'Get Communities' options below. Example: 'artificial intelligence, machine learning'",
+          placeholder: "e.g., cryptocurrency, blockchain, web scraping",
         }).optional(),
         crawlCommentsPerPost: io.input.boolean("Crawl Comments Per Post", {
-          helpText: "Will crawl comments for every post (if the link contains list of posts)",
+          helpText: "When scraping posts from URLs or searches, also extract comments from each post. Useful for getting full discussion context. Limited by 'comments per post' setting below.",
           defaultValue: false,
         }),
         searchPosts: io.input.boolean("Get Posts", {
-          helpText: "Will search for posts with the provided search",
+          helpText: "Search for and extract Reddit posts based on your search terms. Returns post titles, content, metadata, upvotes, and author information. Required when using search terms.",
           defaultValue: true,
         }),
         searchComments: io.input.boolean("Get Comments", {
-          helpText: "Will search for comments with the provided search",
+          helpText: "Search for individual comments across Reddit that match your search terms. Returns comment text, author, parent post info, and upvotes. Can be used with or without 'Get Posts'.",
           defaultValue: false,
         }),
         searchCommunities: io.input.boolean("Get Communities", {
-          helpText: "Will search for communities with the provided search",
+          helpText: "Search for and extract information about Reddit communities (subreddits) that match your search terms. Returns community name, description, subscriber count, and rules.",
           defaultValue: false,
         }),
         sortBy: io.select.single("Sort Search (optional)", {
-          helpText: "Sort search by Relevance, Hot, Top, New or Comments",
+          helpText: "Choose how search results are sorted: Relevance (best match), Hot (trending), Top (highest upvoted), New (most recent), or Comments (most discussed). Default: New",
           options: [
             { label: "Relevance", value: "relevance" },
             { label: "Hot", value: "hot" },
@@ -101,11 +101,11 @@ export default new Action({
           defaultValue: { label: "New", value: "new" },
         }).optional(),
         searchCommunity: io.input.text("Search within a specific community (optional)", {
-          helpText: "Only search within a specific community (one community only, ex: r/developers)",
-          placeholder: "e.g., r/developers, r/webdev",
+          helpText: "Limit your search to only one specific subreddit community. Enter the community name with or without 'r/' prefix. Example: 'technology' or 'r/technology'",
+          placeholder: "e.g., technology, webdev, AskReddit",
         }).optional(),
         timeRange: io.select.single("Retrieve From (Posts only, optional)", {
-          helpText: "Time range for post search results",
+          helpText: "Filter posts by when they were posted. Only applies to post searches. 'All Time' includes posts from any date, while other options limit to recent timeframes. Default: All Time",
           options: [
             { label: "Past Hour", value: "hour" },
             { label: "Past Day", value: "day" },
@@ -117,46 +117,46 @@ export default new Action({
           defaultValue: { label: "All Time", value: "all" },
         }).optional(),
         includeNSFW: io.input.boolean("Include NSFW Content", {
-          helpText: "You can choose to include or exclude NSFW content from your search",
+          helpText: "Include Not Safe For Work (adult/mature) content in your results. When disabled, only safe-for-work content will be scraped. Default: disabled for safety.",
           defaultValue: false,
         }),
         maxPostsCount: io.input.number("Maximum number of posts to be saved (optional)", {
-          helpText: "The maximum number of posts that will be scraped for Homepage Posts, Search Posts, Communities Posts or User Posts (max: 900)",
+          helpText: "Limit the total number of posts to scrape across all sources (homepage, search results, communities, user profiles). Higher numbers take longer but provide more data. Maximum: 900 posts.",
           min: 1,
           max: 900,
           placeholder: "10",
           defaultValue: 10,
         }).optional(),
         maxCommentsCount: io.input.number("Limit of comments to be saved (optional)", {
-          helpText: "The maximum number of comments that will be scraped for Search Query Comments or User Comments (max: 900)",
+          helpText: "When searching for comments directly (not per-post comments), limit the total number of individual comments to scrape. This applies to comment searches and user comment history. Maximum: 900 comments.",
           min: 1,
           max: 900,
           placeholder: "10",
           defaultValue: 10,
         }).optional(),
         maxCommentsPerPost: io.input.number("Limit of comments per post (optional)", {
-          helpText: "The maximum number of comments that will be scraped for each Post (max: 500)",
+          helpText: "When 'Crawl Comments Per Post' is enabled, limit how many comments to extract from each individual post. Top-level and nested comments are included. Maximum: 500 comments per post.",
           min: 1,
           max: 500,
           placeholder: "10",
           defaultValue: 10,
         }).optional(),
         maxCommunitiesCount: io.input.number("Limit of Communities to be saved (optional)", {
-          helpText: "The maximum number of Communities that will be scraped for Search Query Communities (max: 100)",
+          helpText: "When 'Get Communities' is enabled, limit the number of subreddit communities to scrape information about. Useful for broad searches that might return many communities. Maximum: 100 communities.",
           min: 1,
           max: 100,
           placeholder: "2",
           defaultValue: 2,
         }).optional(),
         timeout: io.input.number("Timeout (seconds)", {
-          helpText: "Maximum time to wait for scraping to complete",
+          helpText: "Maximum time allowed for the entire scraping process to complete before automatically stopping. Larger datasets or more comprehensive scraping may need longer timeouts. Range: 5-120 minutes.",
           min: 300,
           max: 7200,
           placeholder: "3600",
           defaultValue: 3600,
         }),
         memory: io.input.number("Memory (MB)", {
-          helpText: "Memory allocation for the scraper",
+          helpText: "Amount of memory allocated to the scraping process. Higher memory allows for larger datasets and faster processing but costs more. Recommended: 8192MB for most use cases.",
           min: 1024,
           max: 32768,
           placeholder: "8192",
@@ -240,9 +240,18 @@ export default new Action({
     await ctx.log(`Sort: ${sortValue}, Time Range: ${timeRangeValue}`);
     await ctx.log(`Limits - Posts: ${maxPostsCount || 10}, Comments: ${maxCommentsCount || 10}, Comments/Post: ${maxCommentsPerPost || 10}, Communities: ${maxCommunitiesCount || 2}`);
 
+    // Calculate estimated total items for progress tracking
+    let estimatedItems = 0;
+    if (searchPosts) estimatedItems += (maxPostsCount || 10);
+    if (searchComments) estimatedItems += (maxCommentsCount || 10);
+    if (searchCommunities) estimatedItems += (maxCommunitiesCount || 2);
+    if (crawlCommentsPerPost && searchPosts) {
+      estimatedItems += (maxPostsCount || 10) * (maxCommentsPerPost || 10);
+    }
+    
     await ctx.loading.start({
       label: "Scraping Reddit data...",
-      itemsInQueue: 1,
+      itemsInQueue: estimatedItems,
     });
 
     try {
@@ -270,6 +279,9 @@ export default new Action({
           
           console.log(`Reddit ${itemType} ${itemCount}:`, JSON.stringify(item, null, 2));
           await ctx.log(`--- End Item ${itemCount} ---\n`);
+          
+          // Update progress for each item scraped
+          await ctx.loading.completeOne();
         }
       };
 
@@ -293,7 +305,8 @@ export default new Action({
 
       const results: RedditScraperResult = await scrapeReddit(input, scraperOptions);
 
-      await ctx.loading.completeOne();
+      // Complete any remaining items in case we scraped fewer than estimated
+      // (this handles cases where actual results are less than the limits)
 
       await ctx.log(`Scraping completed successfully!`);
       await ctx.log(`Run ID: ${results.runId}`);
