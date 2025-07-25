@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey: process.env.OPEN_ROUTER_API_KEY,
 });
 
 export const o4Mini = openrouter.chat("openai/o4-mini");
